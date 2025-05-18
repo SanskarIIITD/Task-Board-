@@ -18,3 +18,10 @@ task-board-app/
 │       │   └── TaskCard.jsx
 │       └── api.js
 └── README.md
+
+backend/requirements.txt
+fastapi
+uvicorn
+pydantic
+
+
