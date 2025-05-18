@@ -19,9 +19,10 @@ task-board-app/
 │       └── api.js
 └── README.md
 
-backend/requirements.txt
-fastapi
-uvicorn
-pydantic
+Start backend:
+cd backend
+uvicorn main:app --reload
 
-
+Start frontend:
+cd frontend
+npm run dev
