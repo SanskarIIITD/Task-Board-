@@ -26,3 +26,6 @@ uvicorn main:app --reload
 Start frontend:
 cd frontend
 npm run dev
+
+Used ChatGPT for this task.
+https://chatgpt.com/share/6829c641-4e00-8008-8ddb-74fb47ae79a0
