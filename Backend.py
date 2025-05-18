@@ -1,79 +1,43 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
-import json
-import uuid
+from uuid import uuid4
 
 app = FastAPI()
+
+origins = ["http://localhost:5173"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load initial data
-with open('tasks.json') as f:
-    board = json.load(f)
-
 class Task(BaseModel):
     id: str
     title: str
-    description: str = ''
+    description: str = ""
+    status: str
 
-class Column(BaseModel):
-    id: str
-    title: str
-    tasks: List[Task]
+# In-memory "DB"
+tasks: Dict[str, Task] = {}
 
-@app.get("/board", response_model=Dict)
-def get_board():
-    return board
+@app.get("/tasks", response_model=List[Task])
+def get_tasks():
+    return list(tasks.values())
 
-@app.post("/task", response_model=Task)
-def create_task(column_id: str, task: Task):
-    for col in board['columns']:
-        if col['id'] == column_id:
-            new_task = task.dict()
-            new_task['id'] = str(uuid.uuid4())
-            col['tasks'].append(new_task)
-            return new_task
-    raise HTTPException(status_code=404, detail="Column not found")
+@app.post("/tasks", response_model=Task)
+def create_task(task: Task):
+    tasks[task.id] = task
+    return task
 
-@app.put("/task/{task_id}", response_model=Task)
+@app.put("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: str, task: Task):
-    for col in board['columns']:
-        for idx, t in enumerate(col['tasks']):
-            if t['id'] == task_id:
-                updated = task.dict()
-                updated['id'] = task_id
-                col['tasks'][idx] = updated
-                return updated
-    raise HTTPException(status_code=404, detail="Task not found")
+    tasks[task_id] = task
+    return task
 
-@app.delete("/task/{task_id}")
+@app.delete("/tasks/{task_id}")
 def delete_task(task_id: str):
-    for col in board['columns']:
-        for idx, t in enumerate(col['tasks']):
-            if t['id'] == task_id:
-                col['tasks'].pop(idx)
-                return {"status": "deleted"}
-    raise HTTPException(status_code=404, detail="Task not found")
-
-@app.post("/move")
-def move_task(task_id: str, source: str, dest: str, dest_index: int):
-    task_obj = None
-    for col in board['columns']:
-        if col['id'] == source:
-            for idx, t in enumerate(col['tasks']):
-                if t['id'] == task_id:
-                    task_obj = col['tasks'].pop(idx)
-                    break
-    if not task_obj:
-        raise HTTPException(status_code=404, detail="Task not found in source")
-    for col in board['columns']:
-        if col['id'] == dest:
-            col['tasks'].insert(dest_index, task_obj)
-            return {"status": "moved"}
-    raise HTTPException(status_code=404, detail="Destination column not found")
+    tasks.pop(task_id, None)
+    return {"message": "Deleted"}
